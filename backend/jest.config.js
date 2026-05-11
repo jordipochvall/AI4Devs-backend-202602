@@ -1,4 +1,16 @@
 module.exports = {
-    preset: 'ts-jest',
-    testEnvironment: 'node',
-  };
+  projects: [
+    {
+      displayName: 'unit',
+      preset: 'ts-jest',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/src/tests/unit/**/*.test.ts'],
+    },
+    {
+      displayName: 'integration',
+      preset: 'ts-jest',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/src/tests/integration/**/*.test.ts'],
+    },
+  ],
+};
