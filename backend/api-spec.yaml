@@ -186,3 +186,103 @@ paths:
         '500':
           description: Error during the file upload process
 
+  /positions/{id}/candidates:
+    get:
+      summary: List candidates in process for a position
+      description: |
+        Returns the paginated list of candidates that have applied to the given
+        position, including the current interview step and the average score
+        computed over the interviews of that specific application.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, minimum: 1 }
+        - in: query
+          name: page
+          required: false
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: pageSize
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Paginated list of candidates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  positionId: { type: integer }
+                  page: { type: integer }
+                  pageSize: { type: integer }
+                  total: { type: integer }
+                  totalPages: { type: integer }
+                  candidates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        applicationId: { type: integer }
+                        candidateId: { type: integer }
+                        fullName: { type: string }
+                        currentInterviewStep:
+                          type: object
+                          properties:
+                            id: { type: integer }
+                            name: { type: string }
+                        averageScore:
+                          type: number
+                          nullable: true
+                          description: Average of non-null scores across interviews of this application. Null if no interview has a score yet.
+        '400':
+          description: Invalid path parameter or pagination value
+        '404':
+          description: Position not found
+
+  /candidates/{id}/stage:
+    put:
+      summary: Move a candidate to a different interview stage
+      description: |
+        Updates the current interview step of a candidate's application. The
+        application is identified by `applicationId` in the body because a
+        candidate may have applications to several positions. The new step must
+        belong to the interview flow of the application's position.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, minimum: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [applicationId, newInterviewStepId]
+              properties:
+                applicationId: { type: integer, minimum: 1 }
+                newInterviewStepId: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Stage updated (or already at that stage — idempotent)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  applicationId: { type: integer }
+                  candidateId: { type: integer }
+                  previousInterviewStepId: { type: integer }
+                  currentInterviewStep:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      name: { type: string }
+        '400':
+          description: Invalid id or missing/invalid body fields
+        '404':
+          description: Candidate, application or interview step not found
+        '422':
+          description: Interview step does not belong to the position's interview flow
